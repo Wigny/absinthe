@@ -56,11 +56,28 @@ defmodule Absinthe.Phase.Parse do
     end
   end
 
+  def format!(input, env) do
+    case parse(input, []) do
+      {:ok, document} ->
+        inspect(document, pretty: true)
+
+      {:error, %Phase.Error{message: message, locations: [location]}} ->
+        raise SyntaxError,
+          file: env[:file],
+          line: env[:line] + location.line,
+          column: location.column,
+          description: message
+
+      {:error, %Phase.Error{message: message}} ->
+        raise message
+    end
+  end
+
   # This is because Dialyzer is telling us tokenizing can never fail,
   # but we know it's possible.
   @dialyzer {:no_match, parse: 2}
   @spec parse(binary | Language.Source.t(), Keyword.t()) ::
-          {:ok, Language.Document.t()} | {:error, tuple}
+          {:ok, Language.Document.t()} | {:error, Phase.Error.t() | tuple}
   defp parse(input, options) when is_binary(input) do
     parse(%Language.Source{body: input}, options)
   end

@@ -28,6 +28,12 @@ defmodule Absinthe do
     defexception message: "analysis failed"
   end
 
+  defmacro sigil_GQL(input, []) do
+    quote bind_quoted: [input: input, env: __CALLER__] do
+      Absinthe.Phase.Parse.format!(input, env)
+    end
+  end
+
   @type result_selection_t :: %{
           String.t() =>
             nil

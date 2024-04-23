@@ -56,6 +56,7 @@ locals_without_parens = [
 ]
 
 [
+  plugins: [Absinthe.Formatter],
   inputs: ["mix.exs", "{config,lib,test}/**/*.{ex,exs}"],
   locals_without_parens: locals_without_parens,
   export: [

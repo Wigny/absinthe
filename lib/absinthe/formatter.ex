@@ -25,12 +25,15 @@ defmodule Absinthe.Formatter do
   ```
   """
 
+  @behaviour Mix.Tasks.Format
+
+  @impl true
   def features(_opts) do
-    [sigils: [], extensions: [".graphql", ".gql"]]
+    [sigils: [:GQL], extensions: [".graphql", ".gql"]]
   end
 
-  def format(contents, _opts \\ []) do
-    {:ok, blueprint} = Absinthe.Phase.Parse.run(contents, [])
-    inspect(blueprint.input, pretty: true)
+  @impl true
+  def format(contents, opts) do
+    Absinthe.Phase.Parse.format!(contents, opts)
   end
 end

@@ -56,15 +56,15 @@ defmodule Absinthe.Phase.Parse do
     end
   end
 
-  def format!(input, env) do
+  def parse!(input, env) do
     case parse(input, []) do
       {:ok, document} ->
-        inspect(document, pretty: true)
+        document
 
       {:error, %Phase.Error{message: message, locations: [location]}} ->
         raise SyntaxError,
           file: env[:file],
-          line: env[:line] + location.line,
+          line: if(line = env[:line], do: line + location.line, else: location.line),
           column: location.column,
           description: message
 

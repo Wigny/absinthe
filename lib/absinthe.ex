@@ -29,8 +29,9 @@ defmodule Absinthe do
   end
 
   defmacro sigil_GQL(input, []) do
-    quote bind_quoted: [input: input, env: __CALLER__] do
-      Absinthe.Phase.Parse.format!(input, env)
+    quote bind_quoted: [input: input], location: :keep do
+      opts = %{file: __ENV__.file, line: __ENV__.line}
+      inspect(Absinthe.Phase.Parse.parse!(input, opts))
     end
   end
 

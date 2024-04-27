@@ -30,8 +30,17 @@ defmodule Absinthe do
 
   defmacro sigil_GQL(input, []) do
     quote bind_quoted: [input: input], location: :keep do
-      opts = %{file: __ENV__.file, line: __ENV__.line}
-      inspect(Absinthe.Phase.Parse.parse!(input, opts))
+      case Absinthe.Phase.Parse.parse(input, []) do
+        {:ok, document} ->
+          inspect(document)
+
+        {:error, %Absinthe.Phase.Error{message: message, locations: [location]}} ->
+          raise SyntaxError,
+            file: __ENV__.file,
+            line: __ENV__.line + location.line,
+            column: location.column,
+            description: message
+      end
     end
   end
 

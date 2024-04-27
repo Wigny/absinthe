@@ -34,16 +34,25 @@ defmodule Absinthe.Formatter do
 
   @impl true
   def format(contents, opts) do
-    newline =
+    eol =
       if match?(<<_single_delimiter>>, opts[:opening_delimiter]),
         do: Inspect.Algebra.empty(),
         else: Inspect.Algebra.line()
 
-    contents
-    |> Absinthe.Phase.Parse.parse!(%{file: opts[:file], line: opts[:line]})
-    |> Inspect.Algebra.to_doc(Inspect.Opts.new([]))
-    |> Inspect.Algebra.concat(newline)
-    |> Inspect.Algebra.format(opts[:graphql_line_length] || opts[:line_length] || 98)
-    |> IO.iodata_to_binary()
+    case Absinthe.Phase.Parse.parse(contents, []) do
+      {:ok, document} ->
+        document
+        |> Inspect.Algebra.to_doc(Inspect.Opts.new([]))
+        |> Inspect.Algebra.concat(eol)
+        |> Inspect.Algebra.format(opts[:graphql_line_length] || opts[:line_length] || 98)
+        |> IO.iodata_to_binary()
+
+      {:error, %Absinthe.Phase.Error{message: message, locations: [location]}} ->
+        raise SyntaxError,
+          file: opts[:file],
+          line: opts[:line] + location.line,
+          column: location.column,
+          description: message
+    end
   end
 end

@@ -3,11 +3,23 @@ defmodule Absinthe.Language.Render do
   import Inspect.Algebra
   import Absinthe.Utils.Render
 
-  def render(%Absinthe.Language.Document{} = doc) do
+  @default_line_width 120
+
+  def inspect(term, %Inspect.Opts{width: width}) do
+    term
+    |> render()
+    |> concat(line())
+    |> format(width || @default_line_width)
+    |> to_string()
+  end
+
+  defp render(bp)
+
+  defp render(%Absinthe.Language.Document{} = doc) do
     doc.definitions |> Enum.map(&render/1) |> join([line(), line()])
   end
 
-  def render(%Absinthe.Language.OperationDefinition{} = op) do
+  defp render(%Absinthe.Language.OperationDefinition{} = op) do
     if op.shorthand do
       concat(operation_definition(op), block(render_list(op.selection_set.selections)))
     else
@@ -18,7 +30,7 @@ defmodule Absinthe.Language.Render do
     end
   end
 
-  def render(%Absinthe.Language.Field{} = field) do
+  defp render(%Absinthe.Language.Field{} = field) do
     case field.selection_set do
       nil ->
         field_definition(field)
@@ -32,7 +44,7 @@ defmodule Absinthe.Language.Render do
     end
   end
 
-  def render(%Absinthe.Language.VariableDefinition{} = variable_definition) do
+  defp render(%Absinthe.Language.VariableDefinition{} = variable_definition) do
     concat([
       "$",
       variable_definition.variable.name,
@@ -42,27 +54,27 @@ defmodule Absinthe.Language.Render do
     ])
   end
 
-  def render(%Absinthe.Language.NamedType{} = named_type) do
+  defp render(%Absinthe.Language.NamedType{} = named_type) do
     named_type.name
   end
 
-  def render(%Absinthe.Language.NonNullType{} = non_null) do
+  defp render(%Absinthe.Language.NonNullType{} = non_null) do
     concat(render(non_null.type), "!")
   end
 
-  def render(%Absinthe.Language.Argument{} = argument) do
+  defp render(%Absinthe.Language.Argument{} = argument) do
     concat([argument.name, ": ", render(argument.value)])
   end
 
-  def render(%Absinthe.Language.Directive{} = directive) do
+  defp render(%Absinthe.Language.Directive{} = directive) do
     concat([" @", directive.name, arguments(directive.arguments)])
   end
 
-  def render(%Absinthe.Language.FragmentSpread{} = spread) do
+  defp render(%Absinthe.Language.FragmentSpread{} = spread) do
     concat(["...", spread.name, directives(spread.directives)])
   end
 
-  def render(%Absinthe.Language.InlineFragment{} = fragment) do
+  defp render(%Absinthe.Language.InlineFragment{} = fragment) do
     concat([
       "...",
       inline_fragment_name(fragment),
@@ -72,43 +84,43 @@ defmodule Absinthe.Language.Render do
     ])
   end
 
-  def render(%Absinthe.Language.Variable{} = variable) do
+  defp render(%Absinthe.Language.Variable{} = variable) do
     concat("$", variable.name)
   end
 
-  def render(%Absinthe.Language.StringValue{value: value}) do
+  defp render(%Absinthe.Language.StringValue{value: value}) do
     render_string_value(value)
   end
 
-  def render(%Absinthe.Language.FloatValue{value: value}) do
+  defp render(%Absinthe.Language.FloatValue{value: value}) do
     "#{value}"
   end
 
-  def render(%Absinthe.Language.ObjectField{} = object_field) do
+  defp render(%Absinthe.Language.ObjectField{} = object_field) do
     concat([object_field.name, ": ", render(object_field.value)])
   end
 
-  def render(%Absinthe.Language.ObjectValue{fields: fields}) do
+  defp render(%Absinthe.Language.ObjectValue{fields: fields}) do
     fields = fields |> Enum.map(&render(&1)) |> join(", ")
 
     concat(["{ ", fields, " }"])
   end
 
-  def render(%Absinthe.Language.NullValue{}) do
+  defp render(%Absinthe.Language.NullValue{}) do
     "null"
   end
 
-  def render(%Absinthe.Language.ListType{type: type}) do
+  defp render(%Absinthe.Language.ListType{type: type}) do
     concat(["[", render(type), "]"])
   end
 
-  def render(%Absinthe.Language.ListValue{values: values}) do
+  defp render(%Absinthe.Language.ListValue{values: values}) do
     values = values |> Enum.map(&render(&1)) |> join(", ")
 
     concat(["[", values, "]"])
   end
 
-  def render(%Absinthe.Language.Fragment{} = fragment) do
+  defp render(%Absinthe.Language.Fragment{} = fragment) do
     concat([
       "fragment ",
       fragment.name,
@@ -120,7 +132,7 @@ defmodule Absinthe.Language.Render do
   end
 
   # Schema
-  def render(%Absinthe.Language.SchemaDeclaration{} = schema) do
+  defp render(%Absinthe.Language.SchemaDeclaration{} = schema) do
     block(
       concat([
         "schema",
@@ -131,7 +143,7 @@ defmodule Absinthe.Language.Render do
     |> description(schema.description)
   end
 
-  def render(%Absinthe.Language.FieldDefinition{} = field) do
+  defp render(%Absinthe.Language.FieldDefinition{} = field) do
     concat([
       field.name,
       arguments(field.arguments),
@@ -142,7 +154,7 @@ defmodule Absinthe.Language.Render do
     |> description(field.description)
   end
 
-  def render(%Absinthe.Language.ScalarTypeDefinition{} = scalar_type) do
+  defp render(%Absinthe.Language.ScalarTypeDefinition{} = scalar_type) do
     concat([
       "scalar ",
       string(scalar_type.name),
@@ -151,7 +163,7 @@ defmodule Absinthe.Language.Render do
     |> description(scalar_type.description)
   end
 
-  def render(%Absinthe.Language.InputValueDefinition{} = input_value) do
+  defp render(%Absinthe.Language.InputValueDefinition{} = input_value) do
     concat([
       input_value.name,
       ": ",
@@ -162,7 +174,7 @@ defmodule Absinthe.Language.Render do
     |> description(input_value.description)
   end
 
-  def render(%Absinthe.Language.InterfaceTypeDefinition{} = interface_type) do
+  defp render(%Absinthe.Language.InterfaceTypeDefinition{} = interface_type) do
     block(
       concat([
         "interface ",
@@ -175,7 +187,7 @@ defmodule Absinthe.Language.Render do
     |> description(interface_type.description)
   end
 
-  def render(%Absinthe.Language.UnionTypeDefinition{} = union_type) do
+  defp render(%Absinthe.Language.UnionTypeDefinition{} = union_type) do
     case Enum.map(union_type.types, &render/1) do
       [] ->
         concat([
@@ -196,7 +208,7 @@ defmodule Absinthe.Language.Render do
     |> description(union_type.description)
   end
 
-  def render(%Absinthe.Language.ObjectTypeDefinition{} = object_type) do
+  defp render(%Absinthe.Language.ObjectTypeDefinition{} = object_type) do
     block(
       concat([
         "type ",
@@ -209,7 +221,7 @@ defmodule Absinthe.Language.Render do
     |> description(object_type.description)
   end
 
-  def render(%Absinthe.Language.InputObjectTypeDefinition{} = input_object_type) do
+  defp render(%Absinthe.Language.InputObjectTypeDefinition{} = input_object_type) do
     block(
       concat([
         "input ",
@@ -221,7 +233,7 @@ defmodule Absinthe.Language.Render do
     |> description(input_object_type.description)
   end
 
-  def render(%Absinthe.Language.DirectiveDefinition{} = directive) do
+  defp render(%Absinthe.Language.DirectiveDefinition{} = directive) do
     locations = directive.locations |> Enum.map(&String.upcase(to_string(&1)))
 
     concat([
@@ -236,7 +248,7 @@ defmodule Absinthe.Language.Render do
     |> description(directive.description)
   end
 
-  def render(%Absinthe.Language.EnumTypeDefinition{} = enum_type) do
+  defp render(%Absinthe.Language.EnumTypeDefinition{} = enum_type) do
     block(
       concat([
         "enum ",
@@ -248,7 +260,7 @@ defmodule Absinthe.Language.Render do
     |> description(enum_type.description)
   end
 
-  def render(%Absinthe.Language.EnumValueDefinition{} = enum_value) do
+  defp render(%Absinthe.Language.EnumValueDefinition{} = enum_value) do
     concat([
       string(enum_value.value),
       directives(enum_value.directives)
@@ -256,14 +268,14 @@ defmodule Absinthe.Language.Render do
     |> description(enum_value.description)
   end
 
-  def render(%Absinthe.Language.TypeExtensionDefinition{} = extension) do
+  defp render(%Absinthe.Language.TypeExtensionDefinition{} = extension) do
     concat(
       "extend ",
       render(extension.definition)
     )
   end
 
-  def render(%{value: value}) do
+  defp render(%{value: value}) do
     to_string(value)
   end
 

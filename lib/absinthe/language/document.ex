@@ -86,8 +86,7 @@ defmodule Absinthe.Language.Document do
   end
 
   defimpl Inspect do
-    def inspect(document, _options) do
-      Absinthe.Language.Render.render(document)
-    end
+    defdelegate inspect(term, options),
+      to: Absinthe.Language.Render
   end
 end
